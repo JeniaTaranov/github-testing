@@ -1,6 +1,8 @@
 package com.github;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import utils.Config;
 
 import static io.restassured.RestAssured.given;
