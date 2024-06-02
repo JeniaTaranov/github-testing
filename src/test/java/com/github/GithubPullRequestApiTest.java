@@ -24,12 +24,19 @@ public class GithubPullRequestApiTest extends GithubGitBaseTest {
         String commitMessage = "A commit message for PR";
         pushCommit(filePath, commitMessage, newBranch);
         int pullNumber = createPullRequest(newBranch, branchToMergeTo);
+
+        verifyPullRequestExists(pullNumber);
     }
 
     private void verifyPullRequestExists(int pullNumber){
+        String url = BASIC_API_URL + String.format("repos/%s/%s/pulls/%s",
+                Config.getProperty("owner-name"),
+                repositoryName,
+                pullNumber);
 
+        get(url, 200);
     }
-    
+
     private int createPullRequest(String newBranch, String branchToMergeTo){
         String url = BASIC_API_URL + String.format("repos/%s/%s/pulls",
                 Config.getProperty("owner-name"),
@@ -42,6 +49,6 @@ public class GithubPullRequestApiTest extends GithubGitBaseTest {
 
         Response response = post(url, pullRequestData.toString(), 201).extract().response();
 
-        return new JSONObject(response.asPrettyString()).getString("id");
+        return new JSONObject(response.asPrettyString()).getInt("number");
     }
 }
