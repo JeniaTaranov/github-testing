@@ -14,6 +14,7 @@ public abstract class GithubBaseTest {
     public final static String BASIC_API_URL = "https://api.github.com/";
     public final static String REPOS_API_URL = BASIC_API_URL + "user/repos";
     public final static String REPOS_OWNER_API_URL_PARTLY = BASIC_API_URL + "repos/";
+    public final static String repositoryName = "Commit-tests";
 
     public static RequestSpecification getBasicRequest(String url){
         return given()

@@ -1,29 +1,59 @@
 package com.github;
 
 import io.restassured.response.Response;
-import org.json.JSONArray;
+import org.apache.commons.lang3.RandomUtils;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import utils.Config;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class GithubGitApiTest extends GithubBaseTest{
-    private final static String repositoryName = "Commit-tests";
+public class GithubGitApiTest extends GithubGitBaseTest {
+    private static String branchName = "main";
 
     @Test
     public void pushCommitTest(){
-        String filePath = "file" + Math.random() + ".txt";
+        String filePath = "file-" + RandomUtils.nextInt() + ".txt";
         String commitMessage = "A message which describes the commit";
-        String latestCommitSha = getLatestCommitSha();
-        String latestTreeSha = getTreeSha(latestCommitSha);
 
-        String blobSha = createBlob();
-        String treeSha = createTree(filePath, latestTreeSha, blobSha);
-        String newCommitSha = createCommit(commitMessage, treeSha, latestCommitSha);
-        updateBranchReference(newCommitSha);
+        String newCommitSha = pushCommit(filePath, commitMessage, branchName);
         verifyCommitExists(newCommitSha);
-        assertTrue(BranchReferenceIsUpdated(newCommitSha));
+        assertTrue(branchReferenceIsUpdated(newCommitSha, branchName));
+    }
+
+    @Test
+    public void createBranchTest(){
+        String latestCommitSha = getLatestCommitSha(branchName);
+        branchName = "feature-" + RandomUtils.nextInt();
+
+        createBranchWithoutSha(branchName);
+        createBranchWithoutName(latestCommitSha);
+        createBranch(branchName, latestCommitSha);
+        assertTrue(branchIsCreated(branchName, latestCommitSha));
+    }
+
+    private boolean branchIsCreated(String branchName, String expectedSha){
+        return getLatestCommitSha(branchName).equals(expectedSha);
+    }
+
+    private void createBranchWithoutSha(String branchName){
+        String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs",
+                Config.getProperty("owner-name"),
+                repositoryName);
+        JSONObject body = new JSONObject();
+        body.put("ref", "refs/heads/" + branchName);
+
+        post(url, body.toString(), 422);
+    }
+
+    private void createBranchWithoutName(String shaToRef){
+        String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs",
+                Config.getProperty("owner-name"),
+                repositoryName);
+        JSONObject body = new JSONObject();
+        body.put("sha", shaToRef);
+
+        post(url, body.toString(), 422);
     }
 
     private void verifyCommitExists(String commitSha){
@@ -36,99 +66,11 @@ public class GithubGitApiTest extends GithubBaseTest{
         get(url, 200);
     }
 
-    private String createTree(String filePath, String baseTreeSha, String blobSha){
-        String url =
-                BASIC_API_URL + String.format("repos/%s/%s/git/trees",
-                        Config.getProperty("owner-name"),
-                        repositoryName);
-
-        JSONObject tree = new JSONObject();
-        tree.put("tree_base", baseTreeSha);
-
-        JSONArray treeArray = new JSONArray();
-        JSONObject treeItem = new JSONObject();
-        treeItem.put("path", filePath);
-        treeItem.put("mode", "100644");
-        treeItem.put("type", "blob");
-        treeItem.put("sha", blobSha);
-        treeArray.put(treeItem);
-
-        tree.put("tree", treeArray);
-
-        Response response = post(url, tree.toString(), 201).extract().response();
-
-        return new JSONObject(response.asPrettyString()).getString("sha");
-    }
-
-    private String createBlob(){
-        String newFileContent = "File content for new commit";
-        String url =
-                BASIC_API_URL + String.format("repos/%s/%s/git/blobs",
-                        Config.getProperty("owner-name"),
-                        repositoryName);
-        String contentBody = "{\n" +
-                "\"content\": \"" + newFileContent + "\"\n" +
-                "}";
-
-        Response response = post(url, contentBody, 201).extract().response();
-
-        return new JSONObject(response.asPrettyString()).getString("sha");
-    }
-
-    private String createCommit(String message, String treeSha, String parentCommitSha){
-        String url =
-                BASIC_API_URL + String.format("repos/%s/%s/git/commits",
-                        Config.getProperty("owner-name"),
-                        repositoryName);
-        JSONObject commit = new JSONObject();
-        commit.put("message", message);
-        commit.put("tree", treeSha);
-        commit.put("parents", new JSONArray().put(parentCommitSha));
-
-        Response response = post(url, commit.toString(), 201).extract().response();
-
-        return new JSONObject(response.asPrettyString()).getString("sha");
-    }
-
-    private String getLatestCommitSha(){
+    private boolean branchReferenceIsUpdated(String commitSha, String branch){
         String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs/heads/%s",
                 Config.getProperty("owner-name"),
                 repositoryName,
-                "main");
-
-        Response response = get(url, 200).extract().response();
-
-        return new JSONObject(response.asPrettyString()).getJSONObject("object").getString("sha");
-    }
-
-    private String getTreeSha(String latestCommitSha){
-        String url = BASIC_API_URL + String.format("repos/%s/%s/git/commits/%s",
-                Config.getProperty("owner-name"),
-                repositoryName,
-                latestCommitSha);
-
-        Response response = get(url, 200).extract().response();
-
-        return new JSONObject(response.asPrettyString()).getJSONObject("tree").getString("sha");
-    }
-
-    private void updateBranchReference(String commitSha){
-        String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs/heads/%s",
-                Config.getProperty("owner-name"),
-                repositoryName,
-                "main");
-
-        JSONObject updateRef = new JSONObject();
-        updateRef.put("sha", commitSha);
-
-        patch(url, updateRef.toString(), 200);
-    }
-
-    private boolean BranchReferenceIsUpdated(String commitSha){
-        String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs/heads/%s",
-                Config.getProperty("owner-name"),
-                repositoryName,
-                "main");
+                branch);
 
         Response response = get(url, 200).extract().response();
 

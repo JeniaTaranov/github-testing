@@ -1,8 +1,7 @@
 package com.github;
 
+import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 import utils.Config;
 
 import static io.restassured.RestAssured.given;
@@ -12,7 +11,7 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
 
     @Test
     public void createRepositoryTest() {
-        String repositoryName = "Repository-create-test-" + Math.random();
+        String repositoryName = "Repository-create-test-" + RandomUtils.nextInt();
         String requestBody = "{\n" +
                 "\"name\": \"" + repositoryName + "\"\n" +
                 "}";
@@ -30,7 +29,7 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
 
     @Test
     public void deleteRepositoryTest(){
-        String repositoryName = "Repository-create-test-" + Math.random();
+        String repositoryName = "Repository-create-test-" + RandomUtils.nextInt();
         String requestBody = "{\n" +
                 "\"name\": \"" + repositoryName + "\"\n" +
                 "}";
