@@ -2,6 +2,7 @@ package com.github;
 
 import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,7 @@ public class GithubPullRequestApiTest extends GithubGitBaseTest {
 
     @BeforeEach
     public void initBranch(){
-        newBranch = "Random-feature-" + RandomUtils.nextInt();
+        newBranch = "feature/random-" + RandomUtils.nextInt();
         String latestSha = getLatestCommitSha(branchToMergeTo);
         createBranch(newBranch, latestSha);
     }
@@ -34,7 +35,7 @@ public class GithubPullRequestApiTest extends GithubGitBaseTest {
                 repositoryName,
                 pullNumber);
 
-        get(url, 200);
+        get(url, HttpStatus.SC_OK);
     }
 
     private int createPullRequest(String newBranch, String branchToMergeTo){
@@ -47,7 +48,7 @@ public class GithubPullRequestApiTest extends GithubGitBaseTest {
         pullRequestData.put("head", newBranch);
         pullRequestData.put("base", branchToMergeTo);
 
-        Response response = post(url, pullRequestData.toString(), 201).extract().response();
+        Response response = post(url, pullRequestData.toString(), HttpStatus.SC_CREATED).extract().response();
 
         return new JSONObject(response.asPrettyString()).getInt("number");
     }

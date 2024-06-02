@@ -1,6 +1,7 @@
 package com.github;
 
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
 import utils.Config;
 
@@ -23,7 +24,7 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
             verifyCreateRepositoryGoodRequest(REPOS_API_URL, requestBody, repositoryName);
         } finally {
             delete(REPOS_OWNER_API_URL_PARTLY + Config.getProperty("owner-name") + "/" + repositoryName,
-                    204);
+                    HttpStatus.SC_NO_CONTENT);
         }
     }
 
@@ -36,9 +37,9 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
 
         getBasicRequest(REPOS_API_URL).body(requestBody).post();
         String repositoryUrl = REPOS_OWNER_API_URL_PARTLY + Config.getProperty("owner-name") + "/" + repositoryName;
-        verifyDeleteRepositoryRequest(repositoryName, 204);
+        verifyDeleteRepositoryRequest(repositoryName, HttpStatus.SC_NO_CONTENT);
         verifyRepositoryWasDeleted(repositoryUrl);
-        verifyDeleteRepositoryRequest(repositoryName, 404); // verify 404 status code for DELETE
+        verifyDeleteRepositoryRequest(repositoryName, HttpStatus.SC_NOT_FOUND); // verify 404 status code for DELETE
                                                                                 // request in case repository not exists
     }
 
@@ -48,7 +49,7 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
     }
 
     private void verifyRepositoryWasDeleted(String url){
-        get(url, 404);
+        get(url, HttpStatus.SC_NOT_FOUND);
     }
 
     private void verifyCreateRepositoryBadRequest(String url){
@@ -56,7 +57,7 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
                 .post()
                 .then()
                 .assertThat()
-                .statusCode(400);
+                .statusCode(HttpStatus.SC_BAD_REQUEST);
     }
 
     private void verifyCreateRepositoryNotAuthenticatedRequest(String url){
@@ -66,10 +67,10 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
                 .post()
                 .then()
                 .assertThat()
-                .statusCode(401);
+                .statusCode(HttpStatus.SC_UNAUTHORIZED);
     }
 
     private void verifyCreateRepositoryGoodRequest(String url, String requestBody, String repositoryName){
-        post(url, requestBody, 201).body("name", equalTo(repositoryName));
+        post(url, requestBody, HttpStatus.SC_CREATED).body("name", equalTo(repositoryName));
     }
 }

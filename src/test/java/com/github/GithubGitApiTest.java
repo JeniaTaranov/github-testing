@@ -2,6 +2,7 @@ package com.github;
 
 import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomUtils;
+import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import utils.Config;
@@ -13,12 +14,16 @@ public class GithubGitApiTest extends GithubGitBaseTest {
 
     @Test
     public void pushCommitTest(){
+        String newBranch = "feature/random-" + RandomUtils.nextInt();
+        String latestSha = getLatestCommitSha(branchName);
+        createBranch(newBranch, latestSha);
+
         String filePath = "file-" + RandomUtils.nextInt() + ".txt";
         String commitMessage = "A message which describes the commit";
 
-        String newCommitSha = pushCommit(filePath, commitMessage, branchName);
+        String newCommitSha = pushCommit(filePath, commitMessage, newBranch);
         verifyCommitExists(newCommitSha);
-        assertTrue(branchReferenceIsUpdated(newCommitSha, branchName));
+        assertTrue(branchReferenceIsUpdated(newCommitSha, newBranch));
     }
 
     @Test
@@ -43,7 +48,7 @@ public class GithubGitApiTest extends GithubGitBaseTest {
         JSONObject body = new JSONObject();
         body.put("ref", "refs/heads/" + branchName);
 
-        post(url, body.toString(), 422);
+        post(url, body.toString(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
     }
 
     private void createBranchWithoutName(String shaToRef){
@@ -53,7 +58,7 @@ public class GithubGitApiTest extends GithubGitBaseTest {
         JSONObject body = new JSONObject();
         body.put("sha", shaToRef);
 
-        post(url, body.toString(), 422);
+        post(url, body.toString(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
     }
 
     private void verifyCommitExists(String commitSha){
@@ -63,7 +68,7 @@ public class GithubGitApiTest extends GithubGitBaseTest {
                         repositoryName,
                         commitSha);
 
-        get(url, 200);
+        get(url, HttpStatus.SC_OK);
     }
 
     private boolean branchReferenceIsUpdated(String commitSha, String branch){
@@ -72,7 +77,7 @@ public class GithubGitApiTest extends GithubGitBaseTest {
                 repositoryName,
                 branch);
 
-        Response response = get(url, 200).extract().response();
+            Response response = get(url, HttpStatus.SC_OK).extract().response();
 
         return new JSONObject(response.asPrettyString()).getJSONObject("object").getString("sha").equals(commitSha);
     }
