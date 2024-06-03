@@ -33,7 +33,6 @@ dependencies {
     testImplementation group: 'io.rest-assured', name: 'rest-assured', version: '5.4.0'
 }
 
-
 test {
     useJUnitPlatform()
 }

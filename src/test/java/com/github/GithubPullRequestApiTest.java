@@ -4,19 +4,25 @@ import io.restassured.response.Response;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.http.HttpStatus;
 import org.json.JSONObject;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import utils.Config;
 
 public class GithubPullRequestApiTest extends GithubGitBaseTest {
     private String branchToMergeTo = "main";
     private String newBranch = "";
+    private String branchRef = "";
 
     @BeforeEach
     public void initBranch(){
         newBranch = "feature/random-" + RandomUtils.nextInt();
         String latestSha = getLatestCommitSha(branchToMergeTo);
-        createBranch(newBranch, latestSha);
+        branchRef = createBranch(newBranch, latestSha);
+    }
+
+    @AfterEach
+    public void eraseBranch(){
+        deleteBranch(branchRef);
     }
 
     @Test
@@ -31,7 +37,7 @@ public class GithubPullRequestApiTest extends GithubGitBaseTest {
 
     private void verifyPullRequestExists(int pullNumber){
         String url = BASIC_API_URL + String.format("repos/%s/%s/pulls/%s",
-                Config.getProperty("owner-name"),
+                OWNER_NAME,
                 repositoryName,
                 pullNumber);
 
@@ -40,7 +46,7 @@ public class GithubPullRequestApiTest extends GithubGitBaseTest {
 
     private int createPullRequest(String newBranch, String branchToMergeTo){
         String url = BASIC_API_URL + String.format("repos/%s/%s/pulls",
-                Config.getProperty("owner-name"),
+                OWNER_NAME,
                 repositoryName);
 
         JSONObject pullRequestData = new JSONObject();

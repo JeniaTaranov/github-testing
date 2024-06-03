@@ -5,7 +5,6 @@ import org.apache.commons.lang3.RandomUtils;
 import org.apache.http.HttpStatus;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
-import utils.Config;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,47 +13,59 @@ public class GithubGitApiTest extends GithubGitBaseTest {
 
     @Test
     public void pushCommitTest(){
-        String newBranch = "feature/random-" + RandomUtils.nextInt();
-        String latestSha = getLatestCommitSha(branchName);
-        createBranch(newBranch, latestSha);
+        String branchRef = "";
+        try {
+            String newBranch = "feature/random-" + RandomUtils.nextInt();
+            String latestSha = getLatestCommitSha(branchName);
+            branchRef = createBranch(newBranch, latestSha);
 
-        String filePath = "file-" + RandomUtils.nextInt() + ".txt";
-        String commitMessage = "A message which describes the commit";
+            String filePath = "file-" + RandomUtils.nextInt() + ".txt";
+            String commitMessage = "A message which describes the commit";
 
-        String newCommitSha = pushCommit(filePath, commitMessage, newBranch);
-        verifyCommitExists(newCommitSha);
-        assertTrue(branchReferenceIsUpdated(newCommitSha, newBranch));
+            String newCommitSha = pushCommit(filePath, commitMessage, newBranch);
+            verifyCommitExists(newCommitSha);
+            assertTrue(branchReferenceIsUpdated(newCommitSha, newBranch));
+        } finally {
+            deleteBranch(branchRef);
+        }
     }
 
     @Test
     public void createBranchTest(){
         String latestCommitSha = getLatestCommitSha(branchName);
         branchName = "feature-" + RandomUtils.nextInt();
+        String branchRef = "";
 
-        createBranchWithoutSha(branchName);
-        createBranchWithoutName(latestCommitSha);
-        createBranch(branchName, latestCommitSha);
-        assertTrue(branchIsCreated(branchName, latestCommitSha));
+        createBranchWithoutShaUnprocessable(branchName);
+        createBranchWithoutNameUnprocessable(latestCommitSha);
+        try {
+            branchRef = createBranch(branchName, latestCommitSha);
+            assertTrue(branchIsCreated(branchName, latestCommitSha));
+        } finally {
+            deleteBranch(branchRef);
+        }
     }
 
     private boolean branchIsCreated(String branchName, String expectedSha){
         return getLatestCommitSha(branchName).equals(expectedSha);
     }
 
-    private void createBranchWithoutSha(String branchName){
-        String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs",
-                Config.getProperty("owner-name"),
-                repositoryName);
+    private void createBranchWithoutShaUnprocessable(String branchName){
+        String url = BASIC_API_URL +
+                String.format("repos/%s/%s/git/refs",
+                        OWNER_NAME,
+                        repositoryName);
         JSONObject body = new JSONObject();
         body.put("ref", "refs/heads/" + branchName);
 
         post(url, body.toString(), HttpStatus.SC_UNPROCESSABLE_ENTITY);
     }
 
-    private void createBranchWithoutName(String shaToRef){
-        String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs",
-                Config.getProperty("owner-name"),
-                repositoryName);
+    private void createBranchWithoutNameUnprocessable(String shaToRef){
+        String url = BASIC_API_URL +
+                String.format("repos/%s/%s/git/refs",
+                        OWNER_NAME,
+                        repositoryName);
         JSONObject body = new JSONObject();
         body.put("sha", shaToRef);
 
@@ -64,7 +75,7 @@ public class GithubGitApiTest extends GithubGitBaseTest {
     private void verifyCommitExists(String commitSha){
         String url =
                 BASIC_API_URL + String.format("repos/%s/%s/git/commits/%s",
-                        Config.getProperty("owner-name"),
+                        OWNER_NAME,
                         repositoryName,
                         commitSha);
 
@@ -73,7 +84,7 @@ public class GithubGitApiTest extends GithubGitBaseTest {
 
     private boolean branchReferenceIsUpdated(String commitSha, String branch){
         String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs/heads/%s",
-                Config.getProperty("owner-name"),
+                OWNER_NAME,
                 repositoryName,
                 branch);
 

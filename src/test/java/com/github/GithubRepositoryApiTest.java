@@ -3,7 +3,6 @@ package com.github;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.Test;
-import utils.Config;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
@@ -23,7 +22,7 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
         try {
             verifyCreateRepositoryGoodRequest(REPOS_API_URL, requestBody, repositoryName);
         } finally {
-            delete(REPOS_OWNER_API_URL_PARTLY + Config.getProperty("owner-name") + "/" + repositoryName,
+            delete(REPOS_OWNER_API_URL_PARTLY + OWNER_NAME + "/" + repositoryName,
                     HttpStatus.SC_NO_CONTENT);
         }
     }
@@ -36,7 +35,7 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
                 "}";
 
         getBasicRequest(REPOS_API_URL).body(requestBody).post();
-        String repositoryUrl = REPOS_OWNER_API_URL_PARTLY + Config.getProperty("owner-name") + "/" + repositoryName;
+        String repositoryUrl = REPOS_OWNER_API_URL_PARTLY + OWNER_NAME + "/" + repositoryName;
         verifyDeleteRepositoryRequest(repositoryName, HttpStatus.SC_NO_CONTENT);
         verifyRepositoryWasDeleted(repositoryUrl);
         verifyDeleteRepositoryRequest(repositoryName, HttpStatus.SC_NOT_FOUND); // verify 404 status code for DELETE
@@ -44,7 +43,7 @@ public class GithubRepositoryApiTest extends GithubBaseTest{
     }
 
     private void verifyDeleteRepositoryRequest(String repositoryName, int expectedStatusCode){
-        delete(REPOS_OWNER_API_URL_PARTLY + Config.getProperty("owner-name") + "/" + repositoryName,
+        delete(REPOS_OWNER_API_URL_PARTLY + OWNER_NAME + "/" + repositoryName,
                 expectedStatusCode);
     }
 

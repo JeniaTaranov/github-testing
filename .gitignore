@@ -1,4 +1,4 @@
 .idea
 .gradle
 build
-local.config.properties
+local.properties

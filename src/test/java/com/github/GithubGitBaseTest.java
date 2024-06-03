@@ -4,25 +4,34 @@ import io.restassured.response.Response;
 import org.apache.http.HttpStatus;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import utils.Config;
 
 public class GithubGitBaseTest extends GithubBaseTest {
 
-    protected void createBranch(String branchName, String shaToRef){
+    protected String createBranch(String branchName, String shaToRef){
         String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs",
-                Config.getProperty("owner-name"),
+                OWNER_NAME,
                 repositoryName);
         JSONObject body = new JSONObject();
         body.put("ref", "refs/heads/" + branchName);
         body.put("sha", shaToRef);
 
-        post(url, body.toString(), HttpStatus.SC_CREATED);
+        Response response = post(url, body.toString(), HttpStatus.SC_CREATED).extract().response();
+
+        return new JSONObject(response.asPrettyString()).getString("ref");
     }
 
+    protected void deleteBranch(String branchRef){
+        String url = BASIC_API_URL + String.format("repos/%s/%s/git/%s",
+                OWNER_NAME,
+                repositoryName,
+                branchRef);
+
+        delete(url, HttpStatus.SC_NO_CONTENT);
+    }
 
     protected static String getLatestCommitSha(String branch){
         String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs/heads/%s",
-                Config.getProperty("owner-name"),
+                OWNER_NAME,
                 repositoryName,
                 branch);
 
@@ -34,7 +43,7 @@ public class GithubGitBaseTest extends GithubBaseTest {
     protected static String createTree(String filePath, String baseTreeSha, String blobSha){
         String url =
                 BASIC_API_URL + String.format("repos/%s/%s/git/trees",
-                        Config.getProperty("owner-name"),
+                        OWNER_NAME,
                         repositoryName);
 
         JSONObject tree = new JSONObject();
@@ -61,7 +70,7 @@ public class GithubGitBaseTest extends GithubBaseTest {
         String newFileContent = "File content for new commit";
         String url =
                 BASIC_API_URL + String.format("repos/%s/%s/git/blobs",
-                        Config.getProperty("owner-name"),
+                        OWNER_NAME,
                         repositoryName);
         String contentBody = "{\n" +
                 "\"content\": \"" + newFileContent + "\"\n" +
@@ -75,7 +84,7 @@ public class GithubGitBaseTest extends GithubBaseTest {
     protected static String createCommit(String message, String treeSha, String parentCommitSha){
         String url =
                 BASIC_API_URL + String.format("repos/%s/%s/git/commits",
-                        Config.getProperty("owner-name"),
+                        OWNER_NAME,
                         repositoryName);
         JSONObject commit = new JSONObject();
         commit.put("message", message);
@@ -91,7 +100,7 @@ public class GithubGitBaseTest extends GithubBaseTest {
 
     protected static String getTreeSha(String latestCommitSha){
         String url = BASIC_API_URL + String.format("repos/%s/%s/git/commits/%s",
-                Config.getProperty("owner-name"),
+                OWNER_NAME,
                 repositoryName,
                 latestCommitSha);
 
@@ -102,7 +111,7 @@ public class GithubGitBaseTest extends GithubBaseTest {
 
     protected static void updateBranchReference(String commitSha, String branch){
         String url = BASIC_API_URL + String.format("repos/%s/%s/git/refs/heads/%s",
-                Config.getProperty("owner-name"),
+                OWNER_NAME,
                 repositoryName,
                 branch);
 
