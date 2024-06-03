@@ -12,6 +12,7 @@
    
 4. To run the project via CLI, run the following commands from the project directory:
    `$ gradle clean `
+   and then 
    `$ gradle build` or 
    `$ grade test`
    
